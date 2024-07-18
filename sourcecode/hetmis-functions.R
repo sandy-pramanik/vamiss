@@ -1,39 +1,11 @@
 
 
 # loading libraries ----
-#print(.libPaths())
 library(reshape2)
-# library(MCMCvis)
-#library(Brobdingnag)
 library(tidyverse)
-library(ggrepel)
-#library(lemon)
-library(RColorBrewer)
-#library(wesanderson)
-library(patchwork)
-#library(codalm)
-library(cowplot)
-#library(gridGraphics)
-library(gridExtra)
-library(pbkrtest)
-
 library(doParallel)
 library(rstan)
 rstan_options(auto_write = TRUE)
-
-# package.path = "/users/spramani/R/4.3.x"
-# library(LaplacesDemon, lib.loc=package.path)
-# # library(scoringutils, lib.loc="/users/spramani/R/4.2.x")
-# # library(loo, lib.loc=package.path)
-# library(abind, lib.loc=package.path)
-# # library(PropCIs, lib.loc="/users/spramani/R/4.2.x")
-# library(sirt, lib.loc=package.path)
-
-# library(LaplacesDemon)
-# library(scoringutils)
-# library(loo)
-# library(abind)
-# library(PropCIs)
 
 
 # stan object of the model ----
@@ -172,7 +144,7 @@ mychampscombine_outsample = function(...){
 hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = NULL, 
                    model.choice = c('hom', 'het_part', 'het',
                                     'separate_empirical', 'pooled_empirical'),
-                   cause.type,
+                   cause.type = "single",
                    pss.method = 'learn', shapeBase = .5,
                    shape_pull = c(.5, .5),
                    shape_hetsens = c(.5, .5), shape_hetrfp = c(.5, .5),
@@ -275,10 +247,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
       
       mits.total_by_site = rowSums(errormat_by_site)
       
-    }else if(cause.type=='multi'){
-      
-      errormat_by_site = mits.total_by_site = NULL
-      
     }
     
     nCause = length(causes)
@@ -319,10 +287,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
       nCause = length(causes)
       nSite = length(sites)
       
-    }else if(cause.type=='multi'){
-      
-      stop("Need to provide both 'va_labeled' and 'gold_standard' since it's multi-cause")
-      
     }
     
   }
@@ -350,23 +314,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
     
     mitsid_by_site_nonNA = mitsid_by_site[idnonNA_by_site]
     siteid_by_site_nonNA = siteid_by_site[idnonNA_by_site]
-    
-  }else if(cause.type=='multi'){
-    
-    # error proportions
-    errorpropmat_by_site = errormat_by_site
-    
-    idnonNA_by_site = 1:(nSite*nCause)
-    
-    errormat_by_site_nonNA = errormat_by_site
-    mits.total_by_site_nonNA = mits.total_by_site
-    errorpropmat_by_site_nonNA = errorpropmat_by_site
-    
-    mits_by_site_nonNA = mits_by_site
-    sites_by_site_nonNA = sites_by_site
-    
-    mitsid_by_site_nonNA = mitsid_by_site
-    siteid_by_site_nonNA = siteid_by_site
     
   }
   
@@ -1140,29 +1087,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
       
       MCMCout = list('mu_si' = mu_si, 'q_si' = q_si)
       
-    }else if(cause.type=='multi'){
-      
-      ### multi ----
-      mu_si = array(dim = c(3, datalist$nCause*datalist$nSite,
-                            datalist$nCause),
-                    dimnames = list(NULL, 
-                                    paste0(datalist$sites_by_site, '_', 
-                                           datalist$mits_by_site),
-                                    datalist$causes))
-      q_si = NULL
-      for(s in 1:datalist$nSite){
-        
-        mu_si[1,((s-1)*datalist$nCause + 1):(s*datalist$nCause),] =
-          codalm::codalm(y = as.matrix((subset(va_labeled, site==datalist$sites[s]))[,datalist$causes]),
-                         x = as.matrix((subset(gold_standard, site==datalist$sites[s]))[,datalist$causes]))
-        
-        # q_si[,l,] = t(DescTools::MultinomCI(x = datalist$errormat_by_site[l,-datalist$mitsid_by_site[l]],
-        #                                     method = 'goodman', conf.level = .95, sides = 'two.sided'))
-        
-      }
-      
-      MCMCout = list('mu_si' = mu_si, 'q_si' = q_si)
-      
     }
     
     m_insample = MCMCout$mu_si
@@ -1211,33 +1135,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
         
         mu_si[,((s-1)*datalist$nCause + 1):(s*datalist$nCause),] = mu_i
         q_si[,((s-1)*datalist$nCause + 1):(s*datalist$nCause),] = q_i
-        
-      }
-      
-      MCMCout = list('mu_i' = mu_i, 'q_i' = q_i,
-                     'mu_si' = mu_si, 'q_si' = q_si)
-      
-    }else if(cause.type=='multi'){
-      
-      ## multi ----
-      mu_i = array(dim = c(3, datalist$nCause,
-                           datalist$nCause),
-                   dimnames = list(NULL, datalist$causes,
-                                   datalist$causes))
-      mu_i[1,,] = codalm::codalm(y = as.matrix(va_labeled[,datalist$causes]),
-                                 x = as.matrix(gold_standard[,datalist$causes]))
-      q_i = NULL
-      
-      mu_si = array(dim = c(3, datalist$nCause*datalist$nSite,
-                            datalist$nCause),
-                    dimnames = list(NULL, 
-                                    paste0(datalist$sites_by_site, '_', 
-                                           datalist$mits_by_site),
-                                    datalist$causes))
-      q_si = NULL
-      for(s in 1:datalist$nSite){
-        
-        mu_si[1,((s-1)*datalist$nCause + 1):(s*datalist$nCause),] = mu_i[1,,]
         
       }
       
@@ -1296,10 +1193,6 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
                       NA.causeid = which(datalist$mits.total_by_site[datalist$sites_by_site==site_s]==0)
                       
                       if(length(NA.causeid)>0){Mmat_s[,NA.causeid,] = MCMCout$m_pred[,NA.causeid,]}
-                      
-                    }else if(cause.type=='multi'){
-                      
-                      Mmat_s = MCMCout$m_insample[,datalist$sites_by_site==site_s,]
                       
                     }
                     
@@ -1403,7 +1296,7 @@ hetmis <- function(va_labeled = NULL, gold_standard = NULL, errormat_by_site = N
 
 
 # sequential va-calibration ----
-calibratedva_v2 <- function(va_unlabeled = NULL, cause.type,
+calibratedva_v2 <- function(va_unlabeled = NULL, cause.type = "single",
                             model.choice = c("seqpshrink_mfixed", "seqpshrink_up"), 
                             Mmat.fixed = NULL,
                             Mmat.asDirich = NULL, pss = 4,
@@ -1941,10 +1834,6 @@ makefigs = function(output.list, output.empirical,
       
       cause.label.row = paste0(cause.label, ' (', mits.freq, ')')
       cause.label.col = paste0(cause.label, ' (', va.freq, ')')
-      
-    }else if(output.list[[1]]$input$cause.type=='multi'){
-      
-      cause.label.row = cause.label.col = cause.label
       
     }
     names(cause.label.row) = names(cause.label.col) = cause.level

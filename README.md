@@ -2,7 +2,7 @@
 
 ## Description
 
-Codes to implement the VA misclassification modeling proposed in [Pramanik et al. (2024+)](https://arxiv.org/abs/2312.03192) and reproduce figures/results therein. 
+Codes to implement the VA misclassification modeling proposed in [Pramanik et al. (2024+)](https://arxiv.org/abs/2312.03192). 
 
 ## Credit
 

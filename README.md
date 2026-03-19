@@ -6,7 +6,9 @@ Codes for modeling country-specific VA misclassification matrices proposed in [P
 
 ## Credit
 
-Sandipan Pramanik developed this repository and wrote the code included here.
+Sandipan Pramanik, Scott Zeger, Dianna Blau, Abhirup Datta.
+
+Maintainer: Sandipan Pramanik ([sandy.pramanik@gmail.com](sandy.pramanik@gmail.com))
 
 ## Required Package Installation
 

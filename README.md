@@ -2,11 +2,11 @@
 
 ## Description
 
-Codes for modeling country-specific VA misclassification matrices proposed in [Pramanik et al. (2024+)](https://arxiv.org/abs/2312.03192). 
+Codes for modeling country-specific VA misclassification matrices proposed in [Pramanik et al. (2025)](https://doi.org/10.1214/24-AOAS2006). 
 
 ## Credit
 
-Sandipan Pramanik developed this repository and wrote the codes included here.
+Sandipan Pramanik developed this repository and wrote the code included here.
 
 ## Required Package Installation
 
